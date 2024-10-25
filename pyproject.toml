@@ -1,0 +1,12 @@
+[project]
+name = "hackos-bench"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "betamark",
+]
+
+[tool.uv.sources]
+betamark = { git = "https://github.com/exobyte-labs/betamark.git" }
