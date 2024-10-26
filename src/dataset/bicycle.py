@@ -4,11 +4,13 @@
 import hashlib
 import tqdm
 import requests
+import sys
 from pathlib import Path
 from io import BytesIO
 
 import imageio.v3 as iio
 
+# sys.path.append(str(Path(__file__).parent.parent.parent)) # for Module not found error "src"
 from src.settings import CACHE_PATH
 
 

@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -7,6 +8,7 @@ from torch.utils.data import Dataset as TorchDataset
 from tqdm.auto import tqdm
 from PIL import Image
 
+# sys.path.append(str(Path(__file__).parent.parent.parent)) 
 from src.settings import CACHE_PATH
 
 BICYCLE_LABEL = 2  # From the ClassLabel mapping
