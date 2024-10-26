@@ -1,23 +1,19 @@
-import logging
-
-from src.dataset import bicycle
-
-logging.basicConfig(level=logging.INFO)
-
-
-def placeholder(x):
-    """
-    Params:
-    -------
-    x: NumPy array representation of an image (dimensions are non-fixed)
-
-    Returns:
-    --------
-    y_pred: int where 0 is negative (no bicycle) or 1 (there is a bicycle)
-    """
-    return 0
+from src.models.ViT import create_vit_classifier
+from src.dataset.bicycle import run_eval
 
 
 if __name__ == "__main__":
-    score = bicycle.run_eval(user_func=placeholder)
+    # Create and load model
+    model = create_vit_classifier()
+    try:
+        model.load("best_vit_model.pth")
+    except:
+        print("No saved model found, using untrained model")
+
+    # Create prediction function wrapper
+    def predict_bicycle(x):
+        return model.predict(x)
+
+    # Run evaluation
+    score = run_eval(user_func=predict_bicycle)
     print(f"{score = }")
