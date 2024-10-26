@@ -1,4 +1,4 @@
-# HackOS-1
+# Un Poco Coco
 
 Our bike detection project for the HackOS-1 hackathon.
 
@@ -8,7 +8,7 @@ Dataset: [Coco minitrain](https://github.com/giddyyupp/coco-minitrain) (subset o
 
 This repository uses `uv`. Install [here](https://docs.astral.sh/uv/getting-started/installation/).
 
-Install the repo with `git clone https://github.com/henri123lemoine/HackOS-bench.git`.
+Install the repo with `git clone https://github.com/henri123lemoine/Un-Poco-Coco.git`.
 
 ## Usage
 
