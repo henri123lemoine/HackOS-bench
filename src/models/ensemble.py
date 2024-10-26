@@ -4,11 +4,17 @@ import numpy as np
 import torch
 from sklearn.ensemble import RandomForestClassifier
 from torch.utils.data import DataLoader
+from transformers import (
+    ViTImageProcessor,
+    ViTForImageClassification,
+    PreTrainedTokenizerBase,
+)
 
-from src.config import DatasetConfig
+from src.config import PretrainedConfig, DatasetConfig
 from src.dataset.bicycle import create_dataloaders
 from src.models.base import Model, PretrainedImageClassifier
 from src.train import validate_model
+from src.settings import MODELS_PATH
 
 
 class ModelWrapper:
@@ -60,8 +66,8 @@ class EnsembleModel(Model):
         self.weights = weights or [1.0 / len(models)] * len(models)
         self.meta_learner = meta_learner
 
-        for wrapper in self.wrapped_models:
-            wrapper.model.to(device)
+        # for wrapper in self.wrapped_models:
+        #     wrapper.model.to(device)
 
     def _get_model_predictions(self, x: torch.Tensor) -> torch.Tensor:
         """Get predictions from all models."""
@@ -151,8 +157,8 @@ class EnsembleModel(Model):
         model_metrics = []
 
         # Get validation metrics for each model
-        for model in self.models:
-            metrics = validate_model(model, val_loader, self.device)
+        for wrapped_model in self.wrapped_models:
+            metrics = validate_model(wrapped_model.model, val_loader, self.device)
             model_metrics.append(
                 metrics[method] if method in metrics else metrics["accuracy"]
             )
@@ -209,19 +215,31 @@ class EnsembleModel(Model):
 
 
 if __name__ == "__main__":
-    # Load models
-    vit_model = torch.load("vit_model.pth")
-    cnn_model = torch.load("cnn_model.pth")
+    model_config = PretrainedConfig(
+        model_name="google/vit-base-patch16-224",
+        model_class=ViTForImageClassification,
+        processor_class=ViTImageProcessor,
+        num_labels=2,
+    )
+    vit_model = PretrainedImageClassifier(model_config)
+    checkpoint1 = torch.load(MODELS_PATH / "vit" / "best_model.pth")
+    vit_model.load_state_dict(checkpoint1["model_state_dict"])
+
+    other_vit_model = PretrainedImageClassifier(model_config)
+    checkpoint2 = torch.load(MODELS_PATH / "best_vit_model.pth")
+    other_vit_model.load_state_dict(checkpoint2["model_state_dict"])
+
+    processor = ViTImageProcessor.from_pretrained("google/vit-base-patch16-224")
+    processors = [processor, processor]
 
     ensemble = EnsembleModel(
-        models=[vit_model, cnn_model],
-        processors=[vit_model.processor, None],
+        models=[vit_model, other_vit_model],
+        processors=processors,
         method="weighted_vote",
     )
 
     config = DatasetConfig(max_images=1000)
 
-    processors = [vit_model.processor, None]
     first_processor = next((p for p in processors if p is not None), None)
     if first_processor is None:
         raise ValueError("At least one processor must be provided")
