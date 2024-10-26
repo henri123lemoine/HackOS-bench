@@ -6,7 +6,6 @@ from src.models.base import PretrainedImageClassifier
 from src.train import train_model
 
 
-
 if __name__ == "__main__":
     model_config = PretrainedConfig(
         model_name="google/vit-base-patch16-224",

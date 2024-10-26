@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
 import torch
@@ -12,7 +12,7 @@ from src.config import DatasetConfig
 
 
 class BicycleDataset(Dataset):
-    """Dataset for bicycle classification with efficient caching and processing."""
+    """Dataset for bicycle classification with efficient two-level caching."""
 
     def __init__(
         self,
@@ -27,96 +27,109 @@ class BicycleDataset(Dataset):
         self.split = split
         self.images, self.labels = self._load_or_create_dataset()
 
-    def _load_or_create_dataset(self) -> Tuple[list[Image.Image], list[int]]:
-        """Load dataset from cache or create new one."""
-        cache_file = self._get_cache_path()
-
-        if cache_file.exists():
-            try:
-                cache_data = torch.load(cache_file)
-                split_data = cache_data[self.split]
-                self._log_stats(split_data["images"], split_data["labels"])
-                return split_data["images"], split_data["labels"]
-            except Exception as e:
-                print(f"Cache load failed: {e}. Creating new dataset...")
-
-        # Create new dataset if cache missing or invalid
-        return self._create_new_dataset()
-
-    def _get_cache_path(self) -> Path:
-        """Get path for cached dataset."""
+    def _get_cache_paths(self) -> Dict[str, Path]:
+        """Get paths for both metadata and processed dataset caches."""
         cache_dir = self.config.cache_dir / "coco2017"
         cache_dir.mkdir(parents=True, exist_ok=True)
-        return (
-            cache_dir / f"coco2017_{self.config.max_images}_{self.config.neg_ratio}.pt"
-        )
+        return {
+            "metadata": cache_dir / "metadata.pt",
+            "processed": cache_dir
+            / f"processed_{self.config.max_images}_{self.config.neg_ratio}.pt",
+        }
 
-    def _create_new_dataset(self) -> Tuple[list[Image.Image], list[int]]:
-        """Create new dataset from COCO."""
-        # Load raw dataset
+    def _has_bicycle(self, example: Dict) -> bool:
+        """Check if an example contains a bicycle."""
+        try:
+            # Labels are in objects['label'] as a list of integers
+            return self.config.bicycle_label in example["objects"]["label"]
+        except (KeyError, TypeError) as e:
+            print(f"\nError in _has_bicycle: {str(e)}")
+            print(f"Example type: {type(example)}")
+            return False
+
+    def _get_or_create_metadata(self) -> Dict[str, np.ndarray]:
+        """Load or create cached metadata"""
+        cache_paths = self._get_cache_paths()
+        
+        if cache_paths['metadata'].exists():
+            print("Loading cached metadata...")
+            return torch.load(cache_paths['metadata'])  # YOLO NO SAFETY
+        
+        print("Creating dataset metadata (this will only happen once)...")
         dataset = load_dataset("rafaelpadilla/coco2017", split="train")
-
-        # Filter bicycle and non-bicycle images
+        
         bicycle_dataset = dataset.filter(
-            lambda x: self.config.bicycle_label in x["objects"]["label"], num_proc=4
+            lambda x: self.config.bicycle_label in x["objects"]["label"],
+            num_proc=4,
+            load_from_cache_file=True,
         )
-        non_bicycle_dataset = dataset.filter(
-            lambda x: self.config.bicycle_label not in x["objects"]["label"], num_proc=4
-        )
+        
+        bicycle_indices = bicycle_dataset.select_columns(['image_id']).to_pandas().index.values
+        all_indices = np.arange(len(dataset))
+        non_bicycle_indices = np.setdiff1d(all_indices, bicycle_indices)
+        
+        metadata = {
+            'bicycle_indices': bicycle_indices,
+            'non_bicycle_indices': non_bicycle_indices,
+            'total_images': len(dataset)
+        }
+        
+        torch.save(metadata, cache_paths['metadata'])  # YOLO NO SAFETY
+        return metadata
 
-        # Sample balanced dataset
-        images, labels = self._create_balanced_dataset(
-            bicycle_dataset, non_bicycle_dataset
-        )
+    def _load_or_create_dataset(self) -> Tuple[list[Image.Image], list[int]]:
+        """Load or create dataset"""
+        cache_paths = self._get_cache_paths()
+        
+        if cache_paths["processed"].exists():
+            cache_data = torch.load(cache_paths["processed"])  # YOLO NO SAFETY
+            split_data = cache_data[self.split]
+            return split_data["images"], split_data["labels"]
 
-        # Split and cache
-        self._split_and_cache_dataset(images, labels)
+        metadata = self._get_or_create_metadata()
+        return self._create_new_dataset(metadata)
 
-        # Return appropriate split
-        split_idx = int(len(images) * self.config.train_ratio)
-        if self.split == "train":
-            return images[:split_idx], labels[:split_idx]
-        return images[split_idx:], labels[split_idx:]
+    def _create_new_dataset(self, metadata: Dict[str, np.ndarray]) -> Tuple[list[Image.Image], list[int]]:
+        """Create new dataset"""
+        n_pos = min(len(metadata["bicycle_indices"]), 
+                    self.config.max_images // (1 + int(self.config.neg_ratio)))
+        n_neg = min(int(n_pos * self.config.neg_ratio), 
+                    len(metadata["non_bicycle_indices"]))
 
-    def _create_balanced_dataset(
-        self, pos_dataset: HFDataset, neg_dataset: HFDataset
-    ) -> Tuple[list[Image.Image], list[int]]:
-        """Create balanced dataset of bicycle/non-bicycle images."""
-        # Calculate sample sizes
-        n_pos = min(
-            len(pos_dataset), self.config.max_images // (1 + int(self.config.neg_ratio))
-        )
-        n_neg = min(int(n_pos * self.config.neg_ratio), len(neg_dataset))
-
-        # Sample indices
         rng = np.random.RandomState(self.config.random_seed)
-        pos_indices = rng.choice(len(pos_dataset), n_pos, replace=False)
-        neg_indices = rng.choice(len(neg_dataset), n_neg, replace=False)
+        pos_indices = rng.choice(metadata["bicycle_indices"], n_pos, replace=False)
+        neg_indices = rng.choice(metadata["non_bicycle_indices"], n_neg, replace=False)
+        
+        dataset = load_dataset("rafaelpadilla/coco2017", split="train")
+        all_indices = np.concatenate([pos_indices, neg_indices])
+        selected_dataset = dataset.select(all_indices)
+        
+        images = []
+        labels = []
+        
+        for i in tqdm(range(n_pos), desc="Loading bicycle images"):
+            images.append(selected_dataset[i]["image"])
+            labels.append(1)
+        
+        for i in tqdm(range(n_pos, n_pos + n_neg), desc="Loading non-bicycle images"):
+            images.append(selected_dataset[i]["image"])
+            labels.append(0)
 
-        # Load images
-        pos_images = self._load_images(
-            pos_dataset, pos_indices, "Loading bicycle images"
-        )
-        neg_images = self._load_images(
-            neg_dataset, neg_indices, "Loading non-bicycle images"
-        )
-
-        # Combine and shuffle
-        images = pos_images + neg_images
-        labels = [1] * len(pos_images) + [0] * len(neg_images)
-
-        # Shuffle with same seed
         combined = list(zip(images, labels))
         rng.shuffle(combined)
         images, labels = zip(*combined)
+        images, labels = list(images), list(labels)
 
-        return list(images), list(labels)
+        split_idx = int(len(images) * self.config.train_ratio)
+        cache_data = {
+            "train": {"images": images[:split_idx], "labels": labels[:split_idx]},
+            "val": {"images": images[split_idx:], "labels": labels[split_idx:]},
+        }
+        torch.save(cache_data, self._get_cache_paths()["processed"])  # YOLO NO SAFETY
 
-    def _load_images(
-        self, dataset: HFDataset, indices: np.ndarray, desc: str
-    ) -> list[Image.Image]:
-        """Load and process images from dataset."""
-        return [dataset[int(i)]["image"] for i in tqdm(indices, desc=desc)]
+        if self.split == "train":
+            return images[:split_idx], labels[:split_idx]
+        return images[split_idx:], labels[split_idx:]
 
     def _split_and_cache_dataset(
         self, images: list[Image.Image], labels: list[int]
@@ -127,17 +140,19 @@ class BicycleDataset(Dataset):
             "train": {"images": images[:split_idx], "labels": labels[:split_idx]},
             "val": {"images": images[split_idx:], "labels": labels[split_idx:]},
         }
-        torch.save(cache_data, self._get_cache_path())
+
+        # Use safer torch.save
+        torch.save(cache_data, self._get_cache_paths()["processed"], weights_only=True)
 
     def _log_stats(self, images: list[Image.Image], labels: list[int]) -> None:
         """Log dataset statistics."""
         n_pos = sum(labels)
-        print(f"""
-        {self.split} dataset loaded:
-        Total images: {len(images)}
-        Positive (bicycle) images: {n_pos}
-        Negative (non-bicycle) images: {len(images) - n_pos}
-        """)
+        print(
+            f"\n{self.split} dataset loaded:"
+            f"\nTotal images: {len(images)}"
+            f"\nBicycle images: {n_pos}"
+            f"\nNon-bicycle images: {len(images) - n_pos}\n"
+        )
 
     def _ensure_rgb(self, image: Any) -> np.ndarray:
         """Convert image to RGB format."""
