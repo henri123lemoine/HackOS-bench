@@ -35,7 +35,6 @@ def train_model(
     model = model.to(model.config.device)
     early_stopping = EarlyStopping(patience=5)
 
-    # Changed to OneCycleLR with better parameters
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         model.optimizer,
         max_lr=model.config.learning_rate,
@@ -55,6 +54,7 @@ def train_model(
         train_loss = 0.0
         train_correct = 0
         train_total = 0
+        num_batches = 0
 
         progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}")
         for batch, labels in progress_bar:
@@ -67,24 +67,30 @@ def train_model(
             loss = model.criterion(outputs, labels)
             loss.backward()
 
-            # Add gradient clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
             model.optimizer.step()
             scheduler.step()
 
+            # Update metrics
             train_loss += loss.item()
             _, predicted = torch.max(outputs, 1)
             train_total += labels.size(0)
             train_correct += (predicted == labels).sum().item()
+            num_batches += 1
 
+            # Update progress bar with current batch metrics
             progress_bar.set_postfix(
                 {
-                    "loss": f"{train_loss/train_total:.4f}",
-                    "acc": f"{train_correct/train_total:.4f}",
+                    "loss": f"{train_loss/num_batches:.4f}",  # Average loss per batch
+                    "acc": f"{train_correct/train_total:.4f}",  # Running accuracy
                     "lr": f"{scheduler.get_last_lr()[0]:.6f}",
                 }
             )
+
+        # Epoch metrics (same calculations as before)
+        epoch_loss = train_loss / len(train_loader)  # Average loss per batch
+        epoch_acc = train_correct / train_total  # Total accuracy
 
         # Validation phase
         val_metrics = validate_model(model, val_loader, model.config.device)
@@ -96,8 +102,8 @@ def train_model(
             break
 
         print(f"\nEpoch [{epoch+1}/{num_epochs}]")
-        print(f"Train Loss: {train_loss/len(train_loader):.4f}")
-        print(f"Train Acc: {train_correct/train_total:.4f}")
+        print(f"Train Loss: {epoch_loss:.4f}")
+        print(f"Train Acc: {epoch_acc:.4f}")
         print(f"Val Acc: {val_metrics['accuracy']:.4f}")
         print(f"Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
 

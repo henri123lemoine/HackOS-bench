@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from datasets import load_dataset, Dataset as HFDataset
 from PIL import Image
 from tqdm.auto import tqdm
+from torchvision import transforms
 
 from src.config import DatasetConfig
 
@@ -116,11 +117,11 @@ class BicycleDataset(Dataset):
 
         for i in tqdm(range(n_pos), desc="Loading bicycle images"):
             images.append(selected_dataset[i]["image"])
-            labels.append(0)
+            labels.append(0)  # Bicycle is 0
 
         for i in tqdm(range(n_pos, n_pos + n_neg), desc="Loading non-bicycle images"):
             images.append(selected_dataset[i]["image"])
-            labels.append(1)
+            labels.append(1)  # Non-bicycle is 1
 
         combined = list(zip(images, labels))
         rng.shuffle(combined)
@@ -128,11 +129,23 @@ class BicycleDataset(Dataset):
         images, labels = list(images), list(labels)
 
         split_idx = int(len(images) * self.config.train_ratio)
+
+        # Log statistics before caching
+        train_labels = labels[:split_idx]
+        val_labels = labels[split_idx:]
+        print(f"\nDataset Statistics:")
+        print(f"Training set: {len(train_labels)} images")
+        print(f"  Bicycles: {train_labels.count(0)}")
+        print(f"  Non-bicycles: {train_labels.count(1)}")
+        print(f"Validation set: {len(val_labels)} images")
+        print(f"  Bicycles: {val_labels.count(0)}")
+        print(f"  Non-bicycles: {val_labels.count(1)}")
+
         cache_data = {
             "train": {"images": images[:split_idx], "labels": labels[:split_idx]},
             "val": {"images": images[split_idx:], "labels": labels[split_idx:]},
         }
-        torch.save(cache_data, self._get_cache_paths()["processed"])  # YOLO NO SAFETY
+        torch.save(cache_data, self._get_cache_paths()["processed"])
 
         if self.split == "train":
             return images[:split_idx], labels[:split_idx]
@@ -199,14 +212,38 @@ class BicycleDataset(Dataset):
         return processed, label
 
 
+class TrainTransform:
+    """Picklable transform class for training data augmentation"""
+
+    def __init__(self):
+        self.transform = transforms.Compose(
+            [
+                transforms.RandomHorizontalFlip(),
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+                transforms.RandomResizedCrop(224, scale=(0.8, 1.0)),
+            ]
+        )
+
+    def __call__(self, image: np.ndarray) -> np.ndarray:
+        # Convert numpy array to PIL Image, apply transforms, convert back
+        pil_image = Image.fromarray(image)
+        transformed = self.transform(pil_image)
+        return np.array(transformed)
+
+
 def create_dataloaders(
     processor: Any,
     config: DatasetConfig | None = None,
 ) -> tuple[DataLoader, DataLoader]:
-    """Create train and validation dataloaders."""
+    """Create train and validation dataloaders with augmentation."""
     config = config or DatasetConfig()
 
-    train_dataset = BicycleDataset(processor, split="train", config=config)
+    # Use class instead of lambda
+    train_transform = TrainTransform() if config.use_augmentation else None
+
+    train_dataset = BicycleDataset(
+        processor, split="train", config=config, transform_fn=train_transform
+    )
     val_dataset = BicycleDataset(processor, split="val", config=config)
 
     train_loader = DataLoader(

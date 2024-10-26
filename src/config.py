@@ -31,10 +31,11 @@ class DatasetConfig:
     """Configuration for dataset creation."""
 
     cache_dir: Path = DATASETS_PATH
-    max_images: int = 1000
+    max_images: int = 5000
     neg_ratio: float = 1.0
     train_ratio: float = 0.8
     random_seed: int = 42
-    batch_size: int = 16
+    batch_size: int = 32
     num_workers: int = 4
     bicycle_label: int = 2  # COCO dataset bicycle class label
+    use_augmentation: bool = True
