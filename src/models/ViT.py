@@ -4,7 +4,7 @@ from src.config import PretrainedConfig
 from src.models.base import PretrainedImageClassifier
 
 
-def create_vit_classifier():
+def create_vit_classifier() -> PretrainedImageClassifier:
     config = PretrainedConfig(
         model_name="google/vit-base-patch16-224",
         model_class=ViTForImageClassification,

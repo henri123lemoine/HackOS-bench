@@ -1,15 +1,11 @@
 # Code taken from my COMP551 mini-project 2
 
-import logging
-
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
 from src.models.base import Model
-
-logger = logging.getLogger(__name__)
 
 np.random.seed(0)
 

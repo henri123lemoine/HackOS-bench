@@ -1,6 +1,11 @@
-from dataclasses import dataclass
 from typing import Type
+from pathlib import Path
+
+import torch
+from dataclasses import dataclass
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
+
+from src.settings import CACHE_PATH
 
 
 @dataclass
@@ -14,7 +19,9 @@ class PretrainedConfig:
     learning_rate: float = 1e-5
     weight_decay: float = 0.01
     freeze_backbone: bool = True
-    backbone_attr: str = (
-        "base_model"  # Attribute name for the backbone (e.g., 'vit' for ViT)
-    )
+    # Attribute name for the backbone (e.g., 'vit' for ViT)
+    backbone_attr: str = "base_model"
     classifier_attr: str = "classifier"  # Attribute name for the classification head
+    save_path: str | Path = CACHE_PATH / "models"
+    checkpoint_name: str = "best_model.pth"
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
