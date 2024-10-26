@@ -21,8 +21,9 @@ uv run main.py
 ## TODO
 
 - [ ] Cache dataset
-- [ ] Install OCR model
-- [ ] Finetune?
+- [ ] Find general vision models
+- [ ] Finetune on bike detection task
+- [ ] Implement Random Forest?
 
 ## Contributors
 

@@ -15,4 +15,5 @@ def placeholder(x):
     return 0
 
 
-bicycle.run_eval(user_func=placeholder)
+if __name__ == "__main__":
+    bicycle.run_eval(user_func=placeholder)
