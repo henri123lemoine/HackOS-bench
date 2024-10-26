@@ -1,6 +1,6 @@
 # HackOS-1
 
-Our OCR project for the HackOS-1 hackathon.
+Our bike detection project for the HackOS-1 hackathon.
 
 Dataset: [Coco minitrain](https://github.com/giddyyupp/coco-minitrain) (subset of [Coco](https://cocodataset.org/#home))
 

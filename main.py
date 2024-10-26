@@ -1,4 +1,4 @@
-from betamark import ocr
+from betamark import bicycle
 
 
 def placeholder(x):
@@ -15,4 +15,4 @@ def placeholder(x):
     return 0
 
 
-ocr.run_eval(user_func=placeholder)
+bicycle.run_eval(user_func=placeholder)
