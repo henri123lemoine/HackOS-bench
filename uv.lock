@@ -177,7 +177,7 @@ wheels = [
 [[package]]
 name = "betamark"
 version = "0.1.0"
-source = { git = "https://github.com/exobyte-labs/betamark.git#7e583bd6b6b627cfe6de96247cc06ae87951eb17" }
+source = { git = "https://github.com/exobyte-labs/betamark.git#842a079a063967908412e444c410aeb40b23ef5c" }
 dependencies = [
     { name = "datasets" },
     { name = "imageio" },

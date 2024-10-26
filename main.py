@@ -2,7 +2,6 @@ import torch
 from transformers import ViTForImageClassification, ViTImageProcessor
 
 from src.config import PretrainedConfig
-from src.eval import run_eval
 from src.models.ViT import PretrainedImageClassifier
 from src.settings import MODELS_PATH
 
@@ -24,5 +23,12 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     model.eval()
-    results = run_eval(user_func=lambda x: 1 - model.predict(x))
+
+    from betamark.bicycle import run_eval, run_validation
+    EVAL = False
+    if EVAL:
+        # from src.eval import run_eval
+        results = run_eval(user_func=lambda x: 1 - model.predict(x))
+    else:
+        results = run_validation(user_func=lambda x: 1 - model.predict(x))
     print(f"Evaluation Results: {results}")
