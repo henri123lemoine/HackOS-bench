@@ -1,4 +1,4 @@
-from transformers import AutoModelForImageClassification, AutoImageProcessor
+from transformers import AutoImageProcessor, AutoModelForImageClassification
 
 from src.config import DatasetConfig, PretrainedConfig
 from src.dataset.bicycle import create_dataloaders
@@ -7,13 +7,13 @@ from src.train import train_model, validate_model
 
 if __name__ == "__main__":
     model_config = PretrainedConfig(
-        model_name="google/mobilenet_v2_1.0_224",  # MobileNetV2 checkpoint
+        model_name="google/mobilenet_v2_1.0_224",
         model_class=AutoModelForImageClassification,
         processor_class=AutoImageProcessor,
         num_labels=2,
         learning_rate=2e-5,
         freeze_backbone=True,
-        backbone_attr="mobilenet",  # Changed to "mobilenet"
+        backbone_attr="mobilenet",
         classifier_attr="classifier",
     )
     model = PretrainedImageClassifier(model_config)

@@ -136,7 +136,7 @@ class PretrainedImageClassifier(Model):
         )
         self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, x):
+    def forward(self, x, pixel_values=None):
         if isinstance(x, np.ndarray):
             if len(x.shape) == 3:
                 x = [x]

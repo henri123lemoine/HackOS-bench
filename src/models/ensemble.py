@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from sklearn.ensemble import RandomForestClassifier
 from torch.utils.data import DataLoader
+from torchvision import transforms
 from transformers import ViTForImageClassification, ViTImageProcessor
 
 from src.config import DatasetConfig, PretrainedConfig
@@ -62,8 +63,28 @@ class EnsembleModel(Model):
         self.weights = weights or [1.0 / len(models)] * len(models)
         self.meta_learner = meta_learner
 
-        # for wrapper in self.wrapped_models:
-        #     wrapper.model.to(device)
+    def predict(self, x):
+        """Predict class for input x"""
+        self.eval()
+        with torch.no_grad():
+            # Basic preprocessing for non-ViT models
+            if not isinstance(x, torch.Tensor):
+                transform = transforms.Compose(
+                    [
+                        transforms.ToTensor(),
+                        transforms.Resize((224, 224)),
+                        transforms.Normalize(
+                            [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+                        ),
+                    ]
+                )
+                x = transform(x).unsqueeze(0)
+
+            outputs = self._get_model_predictions(x)
+
+            if self.method == "weighted_vote":
+                return self.weighted_vote(outputs).item()
+            return self.vote(outputs).item()
 
     def _get_model_predictions(self, x: torch.Tensor) -> torch.Tensor:
         """Get predictions from all models."""
