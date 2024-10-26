@@ -4,8 +4,7 @@ import numpy as np
 import torch
 from sklearn.ensemble import RandomForestClassifier
 from torch.utils.data import DataLoader
-from transformers import (PreTrainedTokenizerBase, ViTForImageClassification,
-                          ViTImageProcessor)
+from transformers import ViTForImageClassification, ViTImageProcessor
 
 from src.config import DatasetConfig, PretrainedConfig
 from src.dataset.bicycle import create_dataloaders
