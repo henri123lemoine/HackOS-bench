@@ -21,8 +21,9 @@ uv run main.py
 
 ### Dataset
 
-- [ ] [Coco](https://cocodataset.org) (subset -> [Coco minitrain](https://github.com/giddyyupp/coco-minitrain))
-- [ ] Pipeline for downloading and processing
+- [x] [Coco](https://cocodataset.org) (subset -> [Coco minitrain](https://github.com/giddyyupp/coco-minitrain))
+- [x] Downloading
+- [ ] Processing
 - [ ] Split into train and validation datasets
 - [ ] Dataset augmentation (Unclear if worthwhile with large enough dataset)
 

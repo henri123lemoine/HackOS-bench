@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from typing import Tuple, List, Optional
 
@@ -10,8 +9,6 @@ from tqdm.auto import tqdm
 from PIL import Image
 
 from src.settings import CACHE_PATH
-
-logger = logging.getLogger(__name__)
 
 BICYCLE_LABEL = 2  # From the ClassLabel mapping
 
@@ -30,13 +27,13 @@ class BicycleDataset(TorchDataset):
 
 def load_coco_dataset(split: str = "train") -> Dataset:
     """Load the COCO dataset from HuggingFace."""
-    logger.info("Loading COCO dataset...")
+    print("Loading COCO dataset...")
     return load_dataset("rafaelpadilla/coco2017", split=split)
 
 
 def filter_bicycle_images(dataset: Dataset) -> Tuple[Dataset, Dataset]:
     """Split dataset into bicycle and non-bicycle images."""
-    logger.info("Filtering bicycle and non-bicycle images...")
+    print("Filtering bicycle and non-bicycle images...")
 
     def contains_bicycle(example):
         return BICYCLE_LABEL in example["objects"]["label"]
@@ -44,7 +41,7 @@ def filter_bicycle_images(dataset: Dataset) -> Tuple[Dataset, Dataset]:
     bicycle_dataset = dataset.filter(contains_bicycle, num_proc=4)
     non_bicycle_dataset = dataset.filter(lambda x: not contains_bicycle(x), num_proc=4)
 
-    logger.info(
+    print(
         f"Found {len(bicycle_dataset)} bicycle images and {len(non_bicycle_dataset)} non-bicycle images"
     )
     return bicycle_dataset, non_bicycle_dataset
@@ -56,13 +53,14 @@ def sample_balanced_indices(
     n_pos: int,
     n_neg: int,
     random_seed: Optional[int] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[List[int], List[int]]:
     """Sample balanced indices for positive and negative examples."""
     if random_seed is not None:
         np.random.seed(random_seed)
 
-    pos_indices = np.random.choice(pos_size, n_pos, replace=False)
-    neg_indices = np.random.choice(neg_size, n_neg, replace=False)
+    # Sample and convert to ints
+    pos_indices = [int(i) for i in np.random.choice(pos_size, n_pos, replace=False)]
+    neg_indices = [int(i) for i in np.random.choice(neg_size, n_neg, replace=False)]
 
     return pos_indices, neg_indices
 
@@ -70,8 +68,6 @@ def sample_balanced_indices(
 def load_images(dataset: Dataset, indices: np.ndarray, desc: str) -> List[Image.Image]:
     """Load images from dataset given indices."""
     images = []
-    # Convert numpy indices to regular Python integers
-    indices = [int(idx) for idx in indices]
     for idx in tqdm(indices, desc=desc):
         img = dataset[idx]["image"]
         images.append(img)
@@ -112,7 +108,7 @@ def load_or_create_cache(
 ) -> Optional[Tuple[BicycleDataset, BicycleDataset]]:
     """Load dataset from cache if it exists."""
     if cache_file.exists():
-        logger.info("Loading cached dataset...")
+        print("Loading cached dataset...")
         return torch.load(cache_file)
     return None
 
@@ -121,7 +117,7 @@ def save_to_cache(
     datasets: Tuple[BicycleDataset, BicycleDataset], cache_file: Path
 ) -> None:
     """Save datasets to cache."""
-    logger.info("Caching datasets...")
+    print("Caching datasets...")
     torch.save(datasets, cache_file)
 
 
@@ -133,7 +129,7 @@ def log_dataset_stats(
     train_pos = sum(train_dataset.labels)
     val_pos = sum(val_dataset.labels)
 
-    logger.info(f"""Dataset created:
+    print(f"""Dataset created:
     Total images: {total_images}
     Training images: {len(train_dataset)} (Positive: {train_pos}, Negative: {len(train_dataset)-train_pos})
     Validation images: {len(val_dataset)} (Positive: {val_pos}, Negative: {len(val_dataset)-val_pos})
@@ -163,7 +159,7 @@ def get_balanced_sample_sizes(
     n_pos = min(n_pos, pos_size)
     n_neg = min(n_neg, neg_size)
 
-    logger.info(f"Will sample {n_pos} positive and {n_neg} negative examples")
+    print(f"Will sample {n_pos} positive and {n_neg} negative examples")
     return n_pos, n_neg
 
 
@@ -188,7 +184,9 @@ def get_bicycle_dataset(
     assert max_images > 0, "max_images must be positive"
     assert neg_ratio > 0, "neg_ratio must be positive"
     assert isinstance(max_images, int), "max_images must be an integer"
-    cache_file = CACHE_PATH / "bicycle_data" / f"bicycle_data_{max_images}_{neg_ratio}.pt"
+    cache_file = (
+        CACHE_PATH / "bicycle_data" / f"bicycle_data_{max_images}_{neg_ratio}.pt"
+    )
 
     # Try loading from cache
     cached_data = load_or_create_cache(cache_file)
