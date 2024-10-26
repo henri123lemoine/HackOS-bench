@@ -58,6 +58,7 @@ non_bicycle_dataset = URLImageDataset(
 full_dataset = bicycle_dataset + non_bicycle_dataset
 
 import numpy as np
+
 # Train-test split
 from torch.utils.data import Subset
 
