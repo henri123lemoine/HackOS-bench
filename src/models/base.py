@@ -71,21 +71,64 @@ class PretrainedImageClassifier(Model):
 
         # Initialize model and processor
         self.processor = config.processor_class.from_pretrained(config.model_name)
+
+        ## NOTE ##
+        # ImageNet:
+        ## 444	bicycle-built-for-two, tandem bicycle, tandem
+        ## 671	mountain bike, all-terrain bike, off-roader
+        ## 670	motor scooter, scooter (to contrast with?)
+
+        # First load the model with original classification head
+        original_model = config.model_class.from_pretrained(config.model_name)
+
+        # Get bicycle-related weights from the original classifier
+        original_classifier = getattr(original_model, config.classifier_attr)
+        if hasattr(original_classifier, "weight"):
+            # For binary classification: [bicycle, background]
+            bicycle_weights = original_classifier.weight[
+                [671, 444]
+            ]  # mountain bike and tandem
+            bicycle_weight = bicycle_weights.mean(dim=0, keepdim=True)  # average them
+
+            # For background, average everything except bicycles and similar vehicles
+            exclude_indices = {670, 671, 444}  # exclude scooter and bicycle classes
+            background_indices = [
+                i
+                for i in range(original_classifier.weight.size(0))
+                if i not in exclude_indices
+            ]
+            background_weight = original_classifier.weight[background_indices].mean(
+                dim=0, keepdim=True
+            )
+
+            # Put bicycle first to match dataset labels
+            initial_weights = torch.cat([bicycle_weight, background_weight], dim=0)
+
+            if hasattr(original_classifier, "bias"):
+                bicycle_biases = original_classifier.bias[[671, 444]]
+                bicycle_bias = bicycle_biases.mean().unsqueeze(0)
+                background_bias = (
+                    original_classifier.bias[background_indices].mean().unsqueeze(0)
+                )
+                initial_bias = torch.cat([bicycle_bias, background_bias], dim=0)
+
+        # Now create our binary classification model
         self.model = config.model_class.from_pretrained(
             config.model_name,
             num_labels=config.num_labels,
             ignore_mismatched_sizes=True,
         )
 
-        # Freeze backbone if specified
-        if config.freeze_backbone:
-            backbone = getattr(self.model, config.backbone_attr)
-            for param in backbone.parameters():
-                param.requires_grad = False
-            # Ensure classifier is trainable
-            classifier = getattr(self.model, config.classifier_attr)
-            for param in classifier.parameters():
-                param.requires_grad = True
+        # Initialize the new classifier with bicycle-related weights
+        new_classifier = getattr(self.model, config.classifier_attr)
+        if hasattr(new_classifier, "weight") and "initial_weights" in locals():
+            print(
+                "Initializing classifier with pretrained bicycle weights"
+            )  # Debug print
+            with torch.no_grad():
+                new_classifier.weight.copy_(initial_weights)
+                if hasattr(new_classifier, "bias") and "initial_bias" in locals():
+                    new_classifier.bias.copy_(initial_bias)
 
         self.optimizer = torch.optim.AdamW(
             [p for p in self.model.parameters() if p.requires_grad],
