@@ -17,6 +17,11 @@ To run `main.py`:
 uv run main.py
 ```
 
+E.g. for other files:
+```bash
+uv run -m src.dataset.load_dataset
+```
+
 ## TODO
 
 ### Dataset
