@@ -1,3 +1,5 @@
+import numpy as np
+import torch
 from transformers import ViTImageProcessor, ViTForImageClassification
 
 from src.config import PretrainedConfig
@@ -19,6 +21,26 @@ def create_vit_classifier() -> PretrainedImageClassifier:
     return PretrainedImageClassifier(config)
 
 
+def test_model_forward(model: PretrainedImageClassifier) -> bool:
+    """Test if model can process a single image"""
+    try:
+        # Create dummy input
+        dummy_image = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
+        
+        # Test forward pass
+        with torch.no_grad():
+            output = model.predict(dummy_image)
+        
+        # Check output
+        assert isinstance(output, (int, np.ndarray)), "Invalid output type"
+        print("Model forward pass test successful")
+        return True
+        
+    except Exception as e:
+        print(f"Model forward pass test failed: {e}")
+        return False
+
+
 if __name__ == "__main__":
     vit = create_vit_classifier()
-    print(vit.config)
+    test_model_forward(vit)
