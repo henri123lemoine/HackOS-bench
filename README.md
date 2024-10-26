@@ -24,6 +24,7 @@ uv run main.py
 - [ ] Find general vision models
 - [ ] Finetune on bike detection task
 - [ ] Implement Random Forest?
+- [ ] Data Augmentation
 
 ## Contributors
 
