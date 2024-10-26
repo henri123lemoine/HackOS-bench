@@ -4,10 +4,12 @@ from src.config import DatasetConfig, PretrainedConfig
 from src.dataset.bicycle import create_dataloaders
 from src.models.base import PretrainedImageClassifier
 from src.train import train_model, validate_model
+from src.settings import MODELS_PATH
+
 
 if __name__ == "__main__":
     model_config = PretrainedConfig(
-        model_name="google/vit-base-patch16-224",
+        model_name="microsoft/resnet-50",
         model_class=ResNetForImageClassification,
         processor_class=AutoImageProcessor,
         num_labels=2,
@@ -17,6 +19,7 @@ if __name__ == "__main__":
         classifier_attr="classifier",
     )
     model = PretrainedImageClassifier(model_config)
+    model.save(MODELS_PATH / "resnet-50.pt")
 
     # Print model parameter status
     for name, param in model.named_parameters():
@@ -41,3 +44,4 @@ if __name__ == "__main__":
         val_loader=val_loader,
         num_epochs=10,
     )
+    trained_model.save(MODELS_PATH / "resnet-50.pt")
