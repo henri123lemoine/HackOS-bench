@@ -183,16 +183,13 @@ LIST_OF_NON_BICYCLES = [
 
 
 class ImageCache:
-    def __init__(self, cache_dir=None):
-        if cache_dir is None:
-            cache_dir = CACHE_PATH
-        self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self):
+        pass
 
     def get_cache_path(self, url):
         # Create a unique filename based on URL hash, using PNG format
         url_hash = hashlib.md5(url.encode()).hexdigest()
-        return self.cache_dir / f"{url_hash}.png"
+        return CACHE_PATH / "bicycle_data" / "eval" / f"{url_hash}.png"
 
     def get_image(self, url):
         cache_path = self.get_cache_path(url)
