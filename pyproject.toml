@@ -25,6 +25,8 @@ dependencies = [
     "tqdm>=4.66.5",
     "transformers[torch]>=4.46.0",
     "scikit-learn>=1.5.2",
+    "seaborn>=0.13.2",
+    "albumentations>=1.4.20",
 ]
 
 [tool.uv.sources]
