@@ -98,7 +98,9 @@ class CNN(Model):
                     y_batch_test = torch.tensor(y_batch_test, dtype=torch.long)
 
                     y_pred_test = self.forward(X_batch_test)
-                    test_accuracy = accuracy(torch.argmax(y_pred_test, dim=1), y_batch_test)
+                    test_accuracy = accuracy(
+                        torch.argmax(y_pred_test, dim=1), y_batch_test
+                    )
                     test_accuracies.append(test_accuracy)
 
                 if batch_idx % log_interval == 0 or batch_idx == len(trainloader) - 1:

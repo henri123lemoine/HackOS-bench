@@ -11,4 +11,5 @@ wheels/
 
 # Miscellaneous
 .python-version
+notebook.ipynb
 data/

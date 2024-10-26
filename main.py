@@ -1,4 +1,8 @@
+import logging
+
 from src.dataset import bicycle
+
+logging.basicConfig(level=logging.INFO)
 
 
 def placeholder(x):
