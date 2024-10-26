@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable
 
 import numpy as np
 import torch
@@ -18,8 +18,8 @@ class BicycleDataset(Dataset):
         self,
         processor: Any,
         split: str = "train",
-        config: Optional[DatasetConfig] = None,
-        transform_fn: Optional[Callable] = None,
+        config: DatasetConfig | None = None,
+        transform_fn: Callable | None = None,
     ):
         self.config = config or DatasetConfig()
         self.processor = processor
@@ -27,7 +27,7 @@ class BicycleDataset(Dataset):
         self.split = split
         self.images, self.labels = self._load_or_create_dataset()
 
-    def _get_cache_paths(self) -> Dict[str, Path]:
+    def _get_cache_paths(self) -> dict[str, Path]:
         """Get paths for both metadata and processed dataset caches."""
         cache_dir = self.config.cache_dir / "coco2017"
         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -37,7 +37,7 @@ class BicycleDataset(Dataset):
             / f"processed_{self.config.max_images}_{self.config.neg_ratio}.pt",
         }
 
-    def _has_bicycle(self, example: Dict) -> bool:
+    def _has_bicycle(self, example: dict) -> bool:
         """Check if an example contains a bicycle."""
         try:
             # Labels are in objects['label'] as a list of integers
@@ -47,7 +47,7 @@ class BicycleDataset(Dataset):
             print(f"Example type: {type(example)}")
             return False
 
-    def _get_or_create_metadata(self) -> Dict[str, np.ndarray]:
+    def _get_or_create_metadata(self) -> dict[str, np.ndarray]:
         """Load or create cached metadata"""
         cache_paths = self._get_cache_paths()
 
@@ -79,7 +79,7 @@ class BicycleDataset(Dataset):
         torch.save(metadata, cache_paths["metadata"])  # YOLO NO SAFETY
         return metadata
 
-    def _load_or_create_dataset(self) -> Tuple[list[Image.Image], list[int]]:
+    def _load_or_create_dataset(self) -> tuple[list[Image.Image], list[int]]:
         """Load or create dataset"""
         cache_paths = self._get_cache_paths()
 
@@ -92,8 +92,8 @@ class BicycleDataset(Dataset):
         return self._create_new_dataset(metadata)
 
     def _create_new_dataset(
-        self, metadata: Dict[str, np.ndarray]
-    ) -> Tuple[list[Image.Image], list[int]]:
+        self, metadata: dict[str, np.ndarray]
+    ) -> tuple[list[Image.Image], list[int]]:
         """Create new dataset"""
         n_pos = min(
             len(metadata["bicycle_indices"]),
@@ -181,7 +181,7 @@ class BicycleDataset(Dataset):
     def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, idx: int) -> Tuple[dict, int]:
+    def __getitem__(self, idx: int) -> tuple[dict, int]:
         image = self.images[idx]
         label = self.labels[idx]
 
@@ -201,8 +201,8 @@ class BicycleDataset(Dataset):
 
 def create_dataloaders(
     processor: Any,
-    config: Optional[DatasetConfig] = None,
-) -> Tuple[DataLoader, DataLoader]:
+    config: DatasetConfig | None = None,
+) -> tuple[DataLoader, DataLoader]:
     """Create train and validation dataloaders."""
     config = config or DatasetConfig()
 
