@@ -10,8 +10,10 @@ import torchvision.models as models
 
 # Load pretrained EfficientNet model
 model = models.efficientnet_b7(pretrained=True)
-model.classifier[1] = nn.Linear(model.classifier[1].in_features, 2)  # Modify for binary classification
-model = model.to('cuda' if torch.cuda.is_available() else 'cpu')
+model.classifier[1] = nn.Linear(
+    model.classifier[1].in_features, 2
+)  # Modify for binary classification
+model = model.to("cuda" if torch.cuda.is_available() else "cpu")
 
 # Loss and Optimizer
 criterion = nn.CrossEntropyLoss()

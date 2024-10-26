@@ -196,6 +196,7 @@ LIST_OF_NON_BICYCLES = [
     "http://images.cocodataset.org/train2017/000000032907.jpg",
 ]
 
+
 class URLImageDataset(Dataset):
     def __init__(self, image_urls, label, transform=None):
         self.image_urls = image_urls
@@ -209,7 +210,7 @@ class URLImageDataset(Dataset):
         url = self.image_urls[idx]
         try:
             response = requests.get(url)
-            image = Image.open(BytesIO(response.content)).convert('RGB')
+            image = Image.open(BytesIO(response.content)).convert("RGB")
             if self.transform:
                 image = self.transform(image)
             return image, self.label
@@ -217,16 +218,21 @@ class URLImageDataset(Dataset):
             print(f"Error loading image: {e}")
             return None, self.label
 
+
 from sklearn.model_selection import train_test_split
 
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-])
+transform = transforms.Compose(
+    [
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    ]
+)
 
 bicycle_dataset = URLImageDataset(LIST_OF_BICYCLES, label=1, transform=transform)
-non_bicycle_dataset = URLImageDataset(LIST_OF_NON_BICYCLES, label=0, transform=transform)
+non_bicycle_dataset = URLImageDataset(
+    LIST_OF_NON_BICYCLES, label=0, transform=transform
+)
 full_dataset = bicycle_dataset + non_bicycle_dataset
 
 """ Train-test split"""
@@ -259,6 +265,7 @@ test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 """ Train """
 
+
 def train_model(model, train_loader, val_loader, criterion, optimizer, epochs=5):
     model.train()
     for epoch in range(epochs):
@@ -266,7 +273,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, epochs=5)
         model.train()
         total_train_loss = 0
         for images, labels in tqdm(train_loader):
-            images, labels = images.to('cuda'), labels.to('cuda')
+            images, labels = images.to("cuda"), labels.to("cuda")
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, labels)
@@ -281,7 +288,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, epochs=5)
         total = 0
         with torch.no_grad():
             for images, labels in val_loader:
-                images, labels = images.to('cuda'), labels.to('cuda')
+                images, labels = images.to("cuda"), labels.to("cuda")
                 outputs = model(images)
                 loss = criterion(outputs, labels)
                 total_val_loss += loss.item()
@@ -293,15 +300,17 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, epochs=5)
         train_loss = total_train_loss / len(train_loader)
         val_loss = total_val_loss / len(val_loader)
         val_accuracy = correct / total
-        print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {train_loss:.4f}, "
-              f"Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}")
-
+        print(
+            f"Epoch [{epoch+1}/{epochs}], Train Loss: {train_loss:.4f}, "
+            f"Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}"
+        )
 
 
 """ Test """
 
 from sklearn.metrics import accuracy_score
 import torch.nn.functional as F
+
 
 # Evaluation Function
 def evaluate_model(model, dataloader):
@@ -311,7 +320,7 @@ def evaluate_model(model, dataloader):
 
     with torch.no_grad():  # No need to calculate gradients
         for images, labels in tqdm(dataloader):
-            images = images.to('cuda')
+            images = images.to("cuda")
             outputs = model(images)
             probabilities = F.softmax(outputs, dim=1)
             predictions = probabilities.argmax(dim=1).cpu().numpy()
@@ -330,8 +339,10 @@ def evaluate_model(model, dataloader):
 
 # Load pretrained ResNet model
 resnet18 = models.resnet18(pretrained=True)
-resnet18.fc = nn.Linear(resnet18.fc.in_features, 2)  # Modify the final layer for binary classification
-model = resnet18.to('cuda' if torch.cuda.is_available() else 'cpu')
+resnet18.fc = nn.Linear(
+    resnet18.fc.in_features, 2
+)  # Modify the final layer for binary classification
+model = resnet18.to("cuda" if torch.cuda.is_available() else "cpu")
 
 # Loss and Optimizer
 criterion = nn.CrossEntropyLoss()
@@ -346,8 +357,10 @@ accuracy = evaluate_model(resnet18, test_loader)
 import torchvision.models as models
 
 model = models.efficientnet_b7(pretrained=True)
-model.classifier[1] = nn.Linear(model.classifier[1].in_features, 2)  # Modify for binary classification
-model = model.to('cuda' if torch.cuda.is_available() else 'cpu')
+model.classifier[1] = nn.Linear(
+    model.classifier[1].in_features, 2
+)  # Modify for binary classification
+model = model.to("cuda" if torch.cuda.is_available() else "cpu")
 
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -359,8 +372,10 @@ accuracy = evaluate_model(model, test_loader)
 """ MobileNetV2 """
 
 mobile_netv2 = models.mobilenet_v2(pretrained=True)
-mobile_netv2.classifier[1] = nn.Linear(mobile_netv2.classifier[1].in_features, 2)  # Modify for binary classification
-mobile_netv2 = mobile_netv2.to('cuda' if torch.cuda.is_available() else 'cpu')
+mobile_netv2.classifier[1] = nn.Linear(
+    mobile_netv2.classifier[1].in_features, 2
+)  # Modify for binary classification
+mobile_netv2 = mobile_netv2.to("cuda" if torch.cuda.is_available() else "cpu")
 
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(mobile_netv2.parameters(), lr=0.001)
