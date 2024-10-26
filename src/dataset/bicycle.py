@@ -50,37 +50,39 @@ class BicycleDataset(Dataset):
     def _get_or_create_metadata(self) -> Dict[str, np.ndarray]:
         """Load or create cached metadata"""
         cache_paths = self._get_cache_paths()
-        
-        if cache_paths['metadata'].exists():
+
+        if cache_paths["metadata"].exists():
             print("Loading cached metadata...")
-            return torch.load(cache_paths['metadata'])  # YOLO NO SAFETY
-        
+            return torch.load(cache_paths["metadata"])  # YOLO NO SAFETY
+
         print("Creating dataset metadata (this will only happen once)...")
         dataset = load_dataset("rafaelpadilla/coco2017", split="train")
-        
+
         bicycle_dataset = dataset.filter(
             lambda x: self.config.bicycle_label in x["objects"]["label"],
             num_proc=4,
             load_from_cache_file=True,
         )
-        
-        bicycle_indices = bicycle_dataset.select_columns(['image_id']).to_pandas().index.values
+
+        bicycle_indices = (
+            bicycle_dataset.select_columns(["image_id"]).to_pandas().index.values
+        )
         all_indices = np.arange(len(dataset))
         non_bicycle_indices = np.setdiff1d(all_indices, bicycle_indices)
-        
+
         metadata = {
-            'bicycle_indices': bicycle_indices,
-            'non_bicycle_indices': non_bicycle_indices,
-            'total_images': len(dataset)
+            "bicycle_indices": bicycle_indices,
+            "non_bicycle_indices": non_bicycle_indices,
+            "total_images": len(dataset),
         }
-        
-        torch.save(metadata, cache_paths['metadata'])  # YOLO NO SAFETY
+
+        torch.save(metadata, cache_paths["metadata"])  # YOLO NO SAFETY
         return metadata
 
     def _load_or_create_dataset(self) -> Tuple[list[Image.Image], list[int]]:
         """Load or create dataset"""
         cache_paths = self._get_cache_paths()
-        
+
         if cache_paths["processed"].exists():
             cache_data = torch.load(cache_paths["processed"])  # YOLO NO SAFETY
             split_data = cache_data[self.split]
@@ -89,28 +91,33 @@ class BicycleDataset(Dataset):
         metadata = self._get_or_create_metadata()
         return self._create_new_dataset(metadata)
 
-    def _create_new_dataset(self, metadata: Dict[str, np.ndarray]) -> Tuple[list[Image.Image], list[int]]:
+    def _create_new_dataset(
+        self, metadata: Dict[str, np.ndarray]
+    ) -> Tuple[list[Image.Image], list[int]]:
         """Create new dataset"""
-        n_pos = min(len(metadata["bicycle_indices"]), 
-                    self.config.max_images // (1 + int(self.config.neg_ratio)))
-        n_neg = min(int(n_pos * self.config.neg_ratio), 
-                    len(metadata["non_bicycle_indices"]))
+        n_pos = min(
+            len(metadata["bicycle_indices"]),
+            self.config.max_images // (1 + int(self.config.neg_ratio)),
+        )
+        n_neg = min(
+            int(n_pos * self.config.neg_ratio), len(metadata["non_bicycle_indices"])
+        )
 
         rng = np.random.RandomState(self.config.random_seed)
         pos_indices = rng.choice(metadata["bicycle_indices"], n_pos, replace=False)
         neg_indices = rng.choice(metadata["non_bicycle_indices"], n_neg, replace=False)
-        
+
         dataset = load_dataset("rafaelpadilla/coco2017", split="train")
         all_indices = np.concatenate([pos_indices, neg_indices])
         selected_dataset = dataset.select(all_indices)
-        
+
         images = []
         labels = []
-        
+
         for i in tqdm(range(n_pos), desc="Loading bicycle images"):
             images.append(selected_dataset[i]["image"])
             labels.append(1)
-        
+
         for i in tqdm(range(n_pos, n_pos + n_neg), desc="Loading non-bicycle images"):
             images.append(selected_dataset[i]["image"])
             labels.append(0)
