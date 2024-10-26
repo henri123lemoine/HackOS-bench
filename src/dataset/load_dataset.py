@@ -109,7 +109,14 @@ def load_or_create_cache(
     """Load dataset from cache if it exists."""
     if cache_file.exists():
         print("Loading cached dataset...")
-        return torch.load(cache_file)
+        datasets = torch.load(cache_file)
+        # Add this to verify we loaded something
+        if datasets is not None:
+            train_dataset, val_dataset = datasets
+            log_dataset_stats(train_dataset, val_dataset)
+            return datasets
+        else:
+            print("Cache was empty or invalid")
     return None
 
 
@@ -172,7 +179,6 @@ def get_bicycle_dataset(
     Download and prepare a balanced dataset of bicycle/non-bicycle images.
 
     Args:
-        cache_dir: Directory to store the dataset
         neg_ratio: Ratio of negative to positive examples
         max_images: Maximum total number of images to download
         random_seed: Random seed for reproducibility
@@ -180,18 +186,22 @@ def get_bicycle_dataset(
     Returns:
         tuple: (train_dataset, val_dataset) as BicycleDataset objects
     """
-    # Input validation
+    print("Starting get_bicycle_dataset...")
+    
     assert max_images > 0, "max_images must be positive"
     assert neg_ratio > 0, "neg_ratio must be positive"
     assert isinstance(max_images, int), "max_images must be an integer"
-    cache_file = (
-        CACHE_PATH / "bicycle_data" / f"bicycle_data_{max_images}_{neg_ratio}.pt"
-    )
-
+    cache_file = CACHE_PATH / "bicycle_data" / f"bicycle_data_{max_images}_{neg_ratio}.pt"
+    
+    print(f"Looking for cache at: {cache_file}")
+    
     # Try loading from cache
     cached_data = load_or_create_cache(cache_file)
     if cached_data is not None:
+        print("Successfully loaded from cache")
         return cached_data
+    
+    print("Cache miss, downloading fresh data...")
 
     # Load and filter dataset
     dataset = load_coco_dataset()
