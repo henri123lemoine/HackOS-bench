@@ -1,4 +1,5 @@
 import torch
+from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
@@ -6,6 +7,33 @@ from src.models.base import PretrainedImageClassifier
 from src.models.ViT import create_vit_classifier
 from src.dataset.processing import create_dataloaders
 from src.settings import MODELS_PATH
+
+
+class EarlyStopping:
+    def __init__(self, patience=7, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.best_loss = None
+        self.early_stop = False
+
+    def __call__(self, val_loss):
+        if self.best_loss is None:
+            self.best_loss = val_loss
+        elif val_loss > self.best_loss - self.min_delta:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_loss = val_loss
+            self.counter = 0
+
+
+def get_scheduler(optimizer):
+    return torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", patience=3, factor=0.1
+    )
+
 
 def train_model(
     model: PretrainedImageClassifier,
@@ -17,7 +45,9 @@ def train_model(
 ) -> PretrainedImageClassifier:
     """Generic training function for any pretrained model"""
     model = model.to(device)
-    best_val_acc = 0.0
+    early_stopping = EarlyStopping(patience=5)
+    scheduler = get_scheduler(model.optimizer)
+    scaler = GradScaler()
 
     for epoch in range(num_epochs):
         # Training phase
@@ -32,10 +62,15 @@ def train_model(
             batch = {k: v.to(device) for k, v in batch.items()}
 
             model.optimizer.zero_grad()
-            outputs = model.model(**batch).logits
-            loss = model.criterion(outputs, labels)
-            loss.backward()
-            model.optimizer.step()
+
+            # Use mixed precision training
+            with torch.amp.autocast(device):
+                outputs = model.model(**batch).logits
+                loss = model.criterion(outputs, labels)
+
+            scaler.scale(loss).backward()
+            scaler.step(model.optimizer)
+            scaler.update()
 
             train_loss += loss.item()
             _, predicted = torch.max(outputs, 1)
@@ -52,6 +87,15 @@ def train_model(
         # Validation phase
         val_metrics = validate_model(model, val_loader, device)
 
+        # Update learning rate
+        scheduler.step(val_metrics["loss"])
+
+        # Early stopping check
+        early_stopping(val_metrics["loss"])
+        if early_stopping.early_stop:
+            print("Early stopping triggered")
+            break
+
         print(f"\nEpoch [{epoch+1}/{num_epochs}]")
         print(f"Train Loss: {train_loss/len(train_loader):.4f}")
         print(f"Train Acc: {train_correct/train_total:.4f}")
@@ -59,7 +103,16 @@ def train_model(
 
         if val_metrics["accuracy"] > best_val_acc:
             best_val_acc = val_metrics["accuracy"]
-            torch.save(model.state_dict(), save_path)
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": model.optimizer.state_dict(),
+                    "loss": val_metrics["loss"],
+                    "accuracy": val_metrics["accuracy"],
+                },
+                save_path,
+            )
 
     return model
 
