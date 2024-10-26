@@ -36,8 +36,12 @@ uv run -m src.dataset.load_dataset
 
 - [ ] Test out general-purpose models:
   - [x] ViT
+  - [ ] [GKGNet](https://github.com/jin-s13/gkgnet)
+    - [ ] Model download: [gkgnet_576.pth](https://drive.usercontent.google.com/download?id=1TB_UqqFvpQ2bvy_qau0aKP6GoK9Xlix_&export=download&authuser=0)
+    - [ ] Figure out how to use and finetune
+  - [ ] More general: Look at models that do well on Coco classification: `https://paperswithcode.com/sota/multi-label-classification-on-ms-coco`
 - [ ] Finetuning
-  - [ ] Look into sample-efficient finetuning
+  - [ ] Look into sample-efficient finetuning(?)
 - [ ] Random Forest for combining various models(?)
 
 ## Contributors
