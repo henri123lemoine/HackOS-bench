@@ -1,12 +1,8 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from torch.utils.data import Dataset, DataLoader
-import requests
-from PIL import Image
-from io import BytesIO
-from tqdm.notebook import tqdm
-import torchvision.models as models
+
+from src.models.utils import train_model
 
 # Load pretrained EfficientNet model
 model = models.efficientnet_b7(pretrained=True)

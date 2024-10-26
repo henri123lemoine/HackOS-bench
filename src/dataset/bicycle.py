@@ -4,7 +4,7 @@ from typing import Any, Callable
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-from datasets import load_dataset, Dataset as HFDataset
+from datasets import load_dataset
 from PIL import Image
 from tqdm.auto import tqdm
 
