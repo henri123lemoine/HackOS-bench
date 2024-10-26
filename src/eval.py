@@ -1,12 +1,15 @@
 # Note from Laurence: I removed a couple of entires after checking a few for BICYCLE presence/absence.
 
-import tqdm
+import hashlib
+from io import BytesIO
 from pathlib import Path
 
-import hashlib
-import requests
-from io import BytesIO
 import imageio.v3 as iio
+import requests
+import torch
+import torch.nn.functional as F
+import tqdm
+from sklearn.metrics import accuracy_score
 
 from src.dataset.url_list import LIST_OF_BICYCLES, LIST_OF_NON_BICYCLES
 
@@ -59,3 +62,25 @@ def run_eval(user_func) -> dict:
             correct_answers += 1
 
     return {"acc": correct_answers / total_answers}
+
+
+def evaluate_model(model, dataloader, device):
+    model.eval()  # Set model to evaluation mode
+    all_labels = []
+    all_predictions = []
+
+    with torch.no_grad():  # No need to calculate gradients
+        for images, labels in tqdm(dataloader):
+            images = images.to(device)
+            outputs = model(images)
+            probabilities = F.softmax(outputs, dim=1)
+            predictions = probabilities.argmax(dim=1).cpu().numpy()
+
+            # Collect labels and predictions
+            all_labels.extend(labels.numpy())
+            all_predictions.extend(predictions)
+
+    # Calculate accuracy
+    accuracy = accuracy_score(all_labels, all_predictions)
+    print(f"Test Accuracy: {accuracy * 100:.2f}%")
+    return accuracy

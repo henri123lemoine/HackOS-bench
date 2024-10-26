@@ -3,9 +3,9 @@ from typing import Any, Callable
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
 from datasets import load_dataset
 from PIL import Image
+from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
 
 from src.config import DatasetConfig

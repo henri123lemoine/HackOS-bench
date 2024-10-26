@@ -1,8 +1,9 @@
-import numpy as np
-import torch
+from typing import Any, Dict, List
+
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
-from typing import Dict, List, Any
+import torch
 
 
 def plot_confusion_matrix(

@@ -1,20 +1,20 @@
-import torch
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
-from torchvision import models, transforms
+import hashlib
+import os
+from pathlib import Path
+
+import albumentations as A
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from pathlib import Path
 import requests
-import cv2
-from tqdm import tqdm
-import pandas as pd
-from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
-import os
-import hashlib
-import albumentations as A
+import torch
+import torch.nn as nn
 from albumentations.pytorch import ToTensorV2
+from sklearn.metrics import classification_report, confusion_matrix
+from torch.utils.data import DataLoader, Dataset
+from torchvision import models
+from tqdm import tqdm
 
 from src.dataset.url_list import LIST_OF_BICYCLES, LIST_OF_NON_BICYCLES
 
@@ -288,7 +288,7 @@ def create_test_dataset():
     return test_dataset
 
 
-def main():
+if __name__ == "__main__":
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -317,7 +317,3 @@ def main():
     evaluator.print_performance_summary(results)
     evaluator.plot_confusion_matrix(results)
     evaluator.plot_misclassified_examples()
-
-
-if __name__ == "__main__":
-    main()

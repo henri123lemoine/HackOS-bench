@@ -1,11 +1,11 @@
-from typing import Type
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Type
 
 import torch
-from dataclasses import dataclass
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
-from src.settings import MODELS_PATH, DATASETS_PATH
+from src.settings import DATASETS_PATH, MODELS_PATH
 
 
 @dataclass

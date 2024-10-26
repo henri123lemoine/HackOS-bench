@@ -1,8 +1,8 @@
 import albumentations as A
 import numpy as np
 from albumentations.pytorch import ToTensorV2
-from torchvision import transforms
 from PIL import Image
+from torchvision import transforms
 
 
 def get_advanced_transforms(train: bool = True):

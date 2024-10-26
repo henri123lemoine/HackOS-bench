@@ -6,9 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from src.settings import CACHE_PATH
-
 from src.config import PretrainedConfig
+from src.settings import CACHE_PATH
 
 
 class Model(nn.Module):

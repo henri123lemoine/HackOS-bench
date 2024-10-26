@@ -1,11 +1,10 @@
 import torch
-from transformers import ViTImageProcessor, ViTForImageClassification
+from transformers import ViTForImageClassification, ViTImageProcessor
 
-from src.config import PretrainedConfig, DatasetConfig
+from src.config import DatasetConfig, PretrainedConfig
 from src.dataset.bicycle import create_dataloaders
 from src.models.base import PretrainedImageClassifier
 from src.train import train_model, validate_model
-
 
 if __name__ == "__main__":
     model_config = PretrainedConfig(

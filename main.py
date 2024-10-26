@@ -1,11 +1,10 @@
 import torch
+from transformers import ViTForImageClassification, ViTImageProcessor
 
-from src.eval import run_eval
-from src.settings import MODELS_PATH
-from src.models.ViT import PretrainedImageClassifier
 from src.config import PretrainedConfig
-from transformers import ViTImageProcessor, ViTForImageClassification
-
+from src.eval import run_eval
+from src.models.ViT import PretrainedImageClassifier
+from src.settings import MODELS_PATH
 
 if __name__ == "__main__":
     checkpoint_path = MODELS_PATH / "vit" / "best_model.pth"

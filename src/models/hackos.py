@@ -7,24 +7,22 @@ Original file is located at
     https://colab.research.google.com/drive/1zv3cp3-fRmP2q2-55nol01hq3GGfztGo
 """
 
+# Ensure necessary libraries are installed in Colab
+from io import BytesIO
+
+import numpy as np
+import requests
 import torch
 import torch.nn as nn
-import torchvision.transforms as transforms
 import torchvision.models as models
-from torch.utils.data import Dataset, DataLoader
-import requests
+import torchvision.transforms as transforms
 from PIL import Image
-from io import BytesIO
-from tqdm.notebook import tqdm, trange
-
-# Ensure necessary libraries are installed in Colab
-from pathlib import Path
-from io import BytesIO
-import requests
-import imageio.v3 as iio
-import numpy as np
+from torch.utils.data import DataLoader, Dataset
+from tqdm.notebook import tqdm
 
 from src.dataset.url_list import LIST_OF_BICYCLES, LIST_OF_NON_BICYCLES
+from src.eval import evaluate_model
+from src.train import train_model
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -68,8 +66,8 @@ full_dataset = bicycle_dataset + non_bicycle_dataset
 
 """ Train-test split"""
 
-from torch.utils.data import Subset
 import numpy as np
+from torch.utils.data import Subset
 
 dataset_size = len(full_dataset)
 
@@ -94,77 +92,6 @@ train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
-""" Train """
-
-
-def train_model(model, train_loader, val_loader, criterion, optimizer, epochs=5):
-    model.train()
-    for epoch in range(epochs):
-        # Training Phase
-        model.train()
-        total_train_loss = 0
-        for images, labels in tqdm(train_loader):
-            images, labels = images.to("cuda"), labels.to("cuda")
-            optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            total_train_loss += loss.item()
-
-        # Validation Phase
-        model.eval()
-        total_val_loss = 0
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for images, labels in val_loader:
-                images, labels = images.to("cuda"), labels.to("cuda")
-                outputs = model(images)
-                loss = criterion(outputs, labels)
-                total_val_loss += loss.item()
-                _, predicted = torch.max(outputs, 1)
-                correct += (predicted == labels).sum().item()
-                total += labels.size(0)
-
-        # Logging losses and accuracy
-        train_loss = total_train_loss / len(train_loader)
-        val_loss = total_val_loss / len(val_loader)
-        val_accuracy = correct / total
-        print(
-            f"Epoch [{epoch+1}/{epochs}], Train Loss: {train_loss:.4f}, "
-            f"Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}"
-        )
-
-
-""" Test """
-
-from sklearn.metrics import accuracy_score
-import torch.nn.functional as F
-
-
-# Evaluation Function
-def evaluate_model(model, dataloader):
-    model.eval()  # Set model to evaluation mode
-    all_labels = []
-    all_predictions = []
-
-    with torch.no_grad():  # No need to calculate gradients
-        for images, labels in tqdm(dataloader):
-            images = images.to("cuda")
-            outputs = model(images)
-            probabilities = F.softmax(outputs, dim=1)
-            predictions = probabilities.argmax(dim=1).cpu().numpy()
-
-            # Collect labels and predictions
-            all_labels.extend(labels.numpy())
-            all_predictions.extend(predictions)
-
-    # Calculate accuracy
-    accuracy = accuracy_score(all_labels, all_predictions)
-    print(f"Test Accuracy: {accuracy * 100:.2f}%")
-    return accuracy
-
 
 """ ResNet """
 
@@ -180,7 +107,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(resnet18.parameters(), lr=0.001)
 
 # Train the model
-train_model(resnet18, train_loader, val_loader, criterion, optimizer, epochs=5)
+train_model(resnet18, train_loader, val_loader, criterion, optimizer, num_epochs=5)
 accuracy = evaluate_model(resnet18, test_loader)
 
 """ Efficient Net"""
@@ -196,7 +123,7 @@ model = model.to("cuda" if torch.cuda.is_available() else "cpu")
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-train_model(model, train_loader, val_loader, criterion, optimizer, epochs=5)
+train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs=5)
 
 accuracy = evaluate_model(model, test_loader)
 
@@ -211,6 +138,6 @@ mobile_netv2 = mobile_netv2.to("cuda" if torch.cuda.is_available() else "cpu")
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(mobile_netv2.parameters(), lr=0.001)
 
-train_model(mobile_netv2, train_loader, val_loader, criterion, optimizer, epochs=5)
+train_model(mobile_netv2, train_loader, val_loader, criterion, optimizer, num_epochs=5)
 
 accuracy = evaluate_model(mobile_netv2, test_loader)
