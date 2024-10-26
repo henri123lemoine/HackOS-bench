@@ -5,7 +5,7 @@ from tqdm.auto import tqdm
 from src.models.base import PretrainedImageClassifier
 from src.models.ViT import create_vit_classifier
 from src.dataset.processing import create_dataloaders
-
+from src.settings import MODELS_PATH
 
 def train_model(
     model: PretrainedImageClassifier,
@@ -104,5 +104,5 @@ if __name__ == "__main__":
         train_loader=train_loader,
         val_loader=val_loader,
         num_epochs=5,
-        save_path="best_vit_model.pth",
+        save_path=MODELS_PATH / "best_vit_model.pth",
     )
