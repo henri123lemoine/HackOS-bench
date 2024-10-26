@@ -4,6 +4,8 @@ Our bike detection project for the HackOS-1 hackathon.
 
 Dataset: [Coco minitrain](https://github.com/giddyyupp/coco-minitrain) (subset of [Coco](https://cocodataset.org))
 
+Final score on the validation eval: `0.66%`
+
 ## Installation
 
 This repository uses `uv`. Install [here](https://docs.astral.sh/uv/getting-started/installation/).
@@ -38,13 +40,16 @@ See [Colab](https://colab.research.google.com/drive/1dtey1NnjcfWFa5qaEXzCrrQWjtc
 
 - [ ] Test out general-purpose models:
   - [x] ViT
+  - [x] ResNet
+  - [x] EfficientNet
+  - [x] MobileNetV2
   - [ ] [GKGNet](https://github.com/jin-s13/gkgnet)
     - [ ] Model download: [gkgnet_576.pth](https://drive.usercontent.google.com/download?id=1TB_UqqFvpQ2bvy_qau0aKP6GoK9Xlix_&export=download&authuser=0)
     - [ ] Figure out how to use and finetune
   - [ ] More general: Look at models that do well on Coco classification: `https://paperswithcode.com/sota/multi-label-classification-on-ms-coco`
 - [ ] Finetuning
   - [ ] Look into sample-efficient finetuning(?)
-- [ ] Random Forest for combining various models(?)
+- [x] Random Forest for combining various models(?) -> Ensembles
 
 ## Contributors
 
