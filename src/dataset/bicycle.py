@@ -7,9 +7,9 @@ from torch.utils.data import Dataset, DataLoader
 from datasets import load_dataset, Dataset as HFDataset
 from PIL import Image
 from tqdm.auto import tqdm
-from torchvision import transforms
 
 from src.config import DatasetConfig
+from src.dataset.transforms import TrainTransform
 
 
 class BicycleDataset(Dataset):
@@ -210,25 +210,6 @@ class BicycleDataset(Dataset):
         processed = {k: v.squeeze(0) for k, v in processed.items()}
 
         return processed, label
-
-
-class TrainTransform:
-    """Picklable transform class for training data augmentation"""
-
-    def __init__(self):
-        self.transform = transforms.Compose(
-            [
-                transforms.RandomHorizontalFlip(),
-                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
-                transforms.RandomResizedCrop(224, scale=(0.8, 1.0)),
-            ]
-        )
-
-    def __call__(self, image: np.ndarray) -> np.ndarray:
-        # Convert numpy array to PIL Image, apply transforms, convert back
-        pil_image = Image.fromarray(image)
-        transformed = self.transform(pil_image)
-        return np.array(transformed)
 
 
 def create_dataloaders(
