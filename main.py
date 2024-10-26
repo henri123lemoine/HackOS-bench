@@ -1,17 +1,16 @@
-# from betamark import bicycle
 from src import bicycle
+
 
 def placeholder(x):
     """
     Params:
     -------
-    x: string representing a genomic sequence
+    x: NumPy array representation of an image (dimensions are non-fixed)
 
     Returns:
     --------
-    y_pred: int where 0 is negative (not an OCR) or 1 (is an OCR)
+    y_pred: int where 0 is negative (no bicycle) or 1 (there is a bicycle)
     """
-
     return 0
 
 
