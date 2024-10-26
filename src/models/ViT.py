@@ -41,26 +41,5 @@ if __name__ == "__main__":
         model,
         train_loader=train_loader,
         val_loader=val_loader,
-        num_epochs=3,
+        num_epochs=10,
     )
-
-    # Optional: Unfreeze and continue training with lower learning rate
-    if initial_metrics["accuracy"] > 0.6:  # Only if initial training went well
-        print("\nUnfreezing backbone and continuing training...")
-        backbone = getattr(trained_model.model, trained_model.config.backbone_attr)
-        for param in backbone.parameters():
-            param.requires_grad = True
-
-        # Reduce learning rate for fine-tuning
-        trained_model.optimizer = torch.optim.AdamW(
-            [p for p in trained_model.model.parameters() if p.requires_grad],
-            lr=1e-6,  # Even lower learning rate for fine-tuning
-            weight_decay=0.01,
-        )
-
-        trained_model = train_model(
-            trained_model,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            num_epochs=2,
-        )
