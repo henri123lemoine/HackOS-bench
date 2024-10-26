@@ -20,10 +20,22 @@ uv run main.py
 
 ## TODO
 
-- [x] Cache dataset
-- [ ] Find general vision models
-- [ ] Finetune on bike detection task
-- [ ] Implement Random Forest?
+- [x] Implement dataset caching
+- [ ] Split into train and validation datasets (64/16 split?)
+- [ ] Dataset augmentation
+  - [ ] Random crop
+  - [ ] Random flip
+  - [ ] Random rotation
+  - [ ] Random brightness
+  - [ ] Random contrast
+  - [ ] Random saturation
+  - [ ] Random hue
+- [ ] Test out various techniques and architectures:
+  - [ ] SIFT with linear classifier
+  - [ ] CNN
+  - [ ] (Add ideas here)
+- [ ] Random Forest
+- [ ] Test benchmark
 
 ## Contributors
 
