@@ -29,18 +29,22 @@ def train_model(
     model: PretrainedImageClassifier,
     train_loader: DataLoader,
     val_loader: DataLoader,
-    num_epochs: int = 5,
+    num_epochs: int = 20,
 ) -> PretrainedImageClassifier:
     """Generic training function for any pretrained model"""
     model = model.to(model.config.device)
-    model.config
     early_stopping = EarlyStopping(patience=5)
 
+    # Changed to OneCycleLR with better parameters
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         model.optimizer,
         max_lr=model.config.learning_rate,
         epochs=num_epochs,
         steps_per_epoch=len(train_loader),
+        pct_start=0.1,  # Warm up for 10% of training
+        anneal_strategy="cos",
+        div_factor=25.0,  # initial_lr = max_lr/25
+        final_div_factor=1000.0,  # final_lr = initial_lr/1000
     )
 
     best_val_acc = 0.0
@@ -62,7 +66,12 @@ def train_model(
             outputs = model.model(**batch).logits
             loss = model.criterion(outputs, labels)
             loss.backward()
+
+            # Add gradient clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
             model.optimizer.step()
+            scheduler.step()
 
             train_loss += loss.item()
             _, predicted = torch.max(outputs, 1)
@@ -73,14 +82,12 @@ def train_model(
                 {
                     "loss": f"{train_loss/train_total:.4f}",
                     "acc": f"{train_correct/train_total:.4f}",
+                    "lr": f"{scheduler.get_last_lr()[0]:.6f}",
                 }
             )
 
         # Validation phase
         val_metrics = validate_model(model, val_loader, model.config.device)
-
-        # Update learning rate
-        scheduler.step(val_metrics["loss"])
 
         # Early stopping check
         early_stopping(val_metrics["loss"])
@@ -92,6 +99,7 @@ def train_model(
         print(f"Train Loss: {train_loss/len(train_loader):.4f}")
         print(f"Train Acc: {train_correct/train_total:.4f}")
         print(f"Val Acc: {val_metrics['accuracy']:.4f}")
+        print(f"Learning Rate: {scheduler.get_last_lr()[0]:.6f}")
 
         if val_metrics["accuracy"] > best_val_acc:
             best_val_acc = val_metrics["accuracy"]
@@ -106,6 +114,7 @@ def train_model(
                     "epoch": epoch,
                     "model_state_dict": model.state_dict(),
                     "optimizer_state_dict": model.optimizer.state_dict(),
+                    "scheduler_state_dict": scheduler.state_dict(),
                     "loss": val_metrics["loss"],
                     "accuracy": val_metrics["accuracy"],
                 },
