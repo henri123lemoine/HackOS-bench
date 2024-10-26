@@ -26,16 +26,16 @@ def test_model_forward(model: PretrainedImageClassifier) -> bool:
     try:
         # Create dummy input
         dummy_image = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
-        
+
         # Test forward pass
         with torch.no_grad():
             output = model.predict(dummy_image)
-        
+
         # Check output
         assert isinstance(output, (int, np.ndarray)), "Invalid output type"
         print("Model forward pass test successful")
         return True
-        
+
     except Exception as e:
         print(f"Model forward pass test failed: {e}")
         return False

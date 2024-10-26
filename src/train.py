@@ -1,11 +1,10 @@
-from dataclasses import dataclass
-from typing import Type
 import torch
 from torch.utils.data import DataLoader
-from transformers import PreTrainedModel, PreTrainedTokenizerBase
 from tqdm.auto import tqdm
 
 from src.models.base import PretrainedImageClassifier
+from src.models.ViT import create_vit_classifier
+from src.dataset.processing import create_dataloaders
 
 
 def train_model(
@@ -92,15 +91,12 @@ def validate_model(
 
 
 if __name__ == "__main__":
-    from src.models.ViT import create_vit_classifier
-    from src.dataset.processing import create_dataloaders
-
     model = create_vit_classifier()
 
     train_loader, val_loader = create_dataloaders(
         processor=model.processor,
-        batch_size=16,
-        max_images=1000,
+        batch_size=16,  # Adjust based on your GPU memory
+        max_images=3000,  # Can increase this for more training data
     )
 
     trained_model = train_model(

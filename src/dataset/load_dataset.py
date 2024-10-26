@@ -108,14 +108,20 @@ def load_or_create_cache(
     """Load dataset from cache if it exists."""
     if cache_file.exists():
         print("Loading cached dataset...")
-        datasets = torch.load(cache_file)
-        # Add this to verify we loaded something
-        if datasets is not None:
-            train_dataset, val_dataset = datasets
+        try:
+            cache_data = torch.load(cache_file)
+            train_dataset = BicycleDataset(
+                cache_data["train"]["images"], cache_data["train"]["labels"]
+            )
+            val_dataset = BicycleDataset(
+                cache_data["val"]["images"], cache_data["val"]["labels"]
+            )
             log_dataset_stats(train_dataset, val_dataset)
-            return datasets
-        else:
-            print("Cache was empty or invalid")
+            return train_dataset, val_dataset
+        except Exception as e:
+            print(f"Error loading cache: {e}")
+            print("Cache was invalid or corrupt, will recreate")
+            return None
     return None
 
 
@@ -124,7 +130,12 @@ def save_to_cache(
 ) -> None:
     """Save datasets to cache."""
     print("Caching datasets...")
-    torch.save(datasets, cache_file)
+    # Save just the images and labels
+    cache_data = {
+        "train": {"images": datasets[0].images, "labels": datasets[0].labels},
+        "val": {"images": datasets[1].images, "labels": datasets[1].labels},
+    }
+    torch.save(cache_data, cache_file)
 
 
 def log_dataset_stats(

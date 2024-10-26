@@ -1,6 +1,6 @@
 import pickle
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 import torch
@@ -52,7 +52,7 @@ class Model(nn.Module):
     def predict(self, X: Any) -> Any:
         raise NotImplementedError("Subclasses must implement predict method")
 
-    def evaluate(self, X: Any, y: Any) -> Dict[str, float]:
+    def evaluate(self, X: Any, y: Any) -> dict[str, float]:
         raise NotImplementedError("Subclasses must implement evaluate method")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
