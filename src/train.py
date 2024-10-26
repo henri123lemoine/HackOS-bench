@@ -47,6 +47,7 @@ def train_model(
     model = model.to(device)
     early_stopping = EarlyStopping(patience=5)
     scheduler = get_scheduler(model.optimizer)
+    best_val_acc = 0.0
 
     for epoch in range(num_epochs):
         # Training phase
@@ -148,8 +149,8 @@ if __name__ == "__main__":
 
     train_loader, val_loader = create_dataloaders(
         processor=model.processor,
-        batch_size=16,  # Adjust based on your GPU memory
-        max_images=3000,  # Can increase this for more training data
+        batch_size=1,  # Adjust based on your GPU memory
+        max_images=10,  # Can increase this for more training data
     )
 
     trained_model = train_model(
