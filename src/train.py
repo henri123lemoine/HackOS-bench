@@ -121,6 +121,7 @@ def validate_model(
     model.eval()
     correct = 0
     total = 0
+    val_loss = 0.0
 
     with torch.no_grad():
         for batch, labels in val_loader:
@@ -128,6 +129,9 @@ def validate_model(
             batch = {k: v.to(device) for k, v in batch.items()}
 
             outputs = model.model(**batch).logits
+            loss = model.criterion(outputs, labels)
+            val_loss += loss.item()
+            
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
@@ -135,6 +139,7 @@ def validate_model(
     return {
         "accuracy": correct / total if total > 0 else 0,
         "total_samples": total,
+        "loss": val_loss / len(val_loader) if len(val_loader) > 0 else float('inf')
     }
 
 
