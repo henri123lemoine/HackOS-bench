@@ -1,3 +1,4 @@
+import os
 import pickle
 from pathlib import Path
 from typing import Any
@@ -150,3 +151,37 @@ class PretrainedImageClassifier(Model):
             outputs = self(x)
             _, predicted = torch.max(outputs, 1)
             return predicted.item() if len(outputs) == 1 else predicted.numpy()
+            
+    def save(self, path: Path):
+        """Save the model, processor, and config"""
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        
+        # Save the model and processor
+        self.model.save_pretrained(path)
+        self.processor.save_pretrained(path)
+        
+        # Save the config
+        torch.save({
+            'config': self.config,
+            'optimizer_state': self.optimizer.state_dict(),
+        }, os.path.join(path, 'training_state.pt'))
+        
+    @classmethod
+    def load(cls, path: Path):
+        """Load a saved model"""
+        # Load the saved state
+        state = torch.load(os.path.join(path, 'training_state.pt'))
+        config = state['config']
+        
+        # Create a new instance
+        instance = cls(config)
+        
+        # Load the model and processor
+        instance.model = config.model_class.from_pretrained(path)
+        instance.processor = config.processor_class.from_pretrained(path)
+        
+        # Load optimizer state
+        instance.optimizer.load_state_dict(state['optimizer_state'])
+        
+        return instance
