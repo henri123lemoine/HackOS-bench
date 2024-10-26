@@ -199,9 +199,8 @@ def get_bicycle_dataset(
     assert max_images > 0, "max_images must be positive"
     assert neg_ratio > 0, "neg_ratio must be positive"
     assert isinstance(max_images, int), "max_images must be an integer"
-    cache_file = (
-        CACHE_PATH / "bicycle_data" / f"bicycle_data_{max_images}_{neg_ratio}.pt"
-    )
+    cache_file = CACHE_PATH / "coco2017" / f"coco2017_{max_images}_{neg_ratio}.pt"
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Try loading from cache
     cached_data = load_or_create_cache(cache_file)
