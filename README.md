@@ -16,8 +16,6 @@ Install the repo with `git clone https://github.com/henri123lemoine/HackOS-bench
 uv run main.py
 ```
 
-## Misc
-
 ## TODO
 
 - [x] Implement dataset caching

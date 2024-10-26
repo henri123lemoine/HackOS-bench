@@ -1,11 +1,14 @@
 [project]
 name = "hackos-bench"
 version = "0.1.0"
-description = "Add your description here"
+description = "Our bike detection project for the HackOS-1 hackathon."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "betamark",
+    "imageio>=2.36.0",
+    "torch>=2.5.0",
+    "tqdm>=4.66.5",
 ]
 
 [tool.uv.sources]

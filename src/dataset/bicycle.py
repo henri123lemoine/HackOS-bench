@@ -1,13 +1,15 @@
 # This code was modified from ExoLabs' https://github.com/exobyte-labs/betamark
 # Note from Laurence: I removed a couple of entires after checking a few for BICYCLE presence/absence.
 
-import os
 import hashlib
-from pathlib import Path
 import tqdm
 import requests
+from pathlib import Path
 from io import BytesIO
+
 import imageio.v3 as iio
+
+from src.settings import CACHE_PATH
 
 
 ### Train dataset ###
@@ -183,7 +185,7 @@ LIST_OF_NON_BICYCLES = [
 class ImageCache:
     def __init__(self, cache_dir=None):
         if cache_dir is None:
-            cache_dir = os.path.join(str(Path.home()), ".betamark", "image_cache")
+            cache_dir = CACHE_PATH
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
