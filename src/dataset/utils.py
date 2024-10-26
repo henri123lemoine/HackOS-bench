@@ -14,7 +14,8 @@ class ImageCache:
     def get_cache_path(self, url):
         # Create a unique filename based on URL hash, using PNG format
         url_hash = hashlib.md5(url.encode()).hexdigest()
-        return CACHE_PATH / "coco2017" / f"{url_hash}.png"
+        (CACHE_PATH / "coco2017").mkdir(parents=True, exist_ok=True)
+        return CACHE_PATH / f"{url_hash}.png"
 
     def get_image(self, url):
         cache_path = self.get_cache_path(url)

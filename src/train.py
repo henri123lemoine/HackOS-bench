@@ -1,5 +1,4 @@
 import torch
-from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
@@ -40,11 +39,10 @@ def train_model(
     train_loader: DataLoader,
     val_loader: DataLoader,
     num_epochs: int = 5,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
-    save_path: str = "best_model.pth",
 ) -> PretrainedImageClassifier:
     """Generic training function for any pretrained model"""
-    model = model.to(device)
+    model = model.to(model.config.device)
+    model.config
     early_stopping = EarlyStopping(patience=5)
     scheduler = get_scheduler(model.optimizer)
     best_val_acc = 0.0
@@ -58,8 +56,8 @@ def train_model(
 
         progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}")
         for batch, labels in progress_bar:
-            labels = labels.to(device)
-            batch = {k: v.to(device) for k, v in batch.items()}
+            labels = labels.to(model.config.device)
+            batch = {k: v.to(model.config.device) for k, v in batch.items()}
 
             model.optimizer.zero_grad()
 
@@ -81,7 +79,7 @@ def train_model(
             )
 
         # Validation phase
-        val_metrics = validate_model(model, val_loader, device)
+        val_metrics = validate_model(model, val_loader, model.config.device)
 
         # Update learning rate
         scheduler.step(val_metrics["loss"])
@@ -99,6 +97,8 @@ def train_model(
 
         if val_metrics["accuracy"] > best_val_acc:
             best_val_acc = val_metrics["accuracy"]
+            save_file_path = model.config.save_path / model.config.backbone_attr / model.config.checkpoint_name
+            save_file_path.parent.mkdir(parents=True, exist_ok=True)
             torch.save(
                 {
                     "epoch": epoch,
@@ -107,7 +107,7 @@ def train_model(
                     "loss": val_metrics["loss"],
                     "accuracy": val_metrics["accuracy"],
                 },
-                save_path,
+                save_file_path,
             )
 
     return model
@@ -149,14 +149,13 @@ if __name__ == "__main__":
 
     train_loader, val_loader = create_dataloaders(
         processor=model.processor,
-        batch_size=1,  # Adjust based on your GPU memory
-        max_images=10,  # Can increase this for more training data
+        batch_size=64,  # Adjust based on your GPU memory
+        max_images=1000,  # Can increase this for more training data
     )
 
     trained_model = train_model(
-        model=model,
+        model,
         train_loader=train_loader,
         val_loader=val_loader,
-        num_epochs=5,
-        save_path=MODELS_PATH / "best_vit_model.pth",
+        num_epochs=3,
     )

@@ -5,7 +5,7 @@ import torch
 from dataclasses import dataclass
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
-from src.settings import CACHE_PATH
+from src.settings import MODELS_PATH
 
 
 @dataclass
@@ -22,6 +22,6 @@ class PretrainedConfig:
     # Attribute name for the backbone (e.g., 'vit' for ViT)
     backbone_attr: str = "base_model"
     classifier_attr: str = "classifier"  # Attribute name for the classification head
-    save_path: str | Path = CACHE_PATH / "models"
+    save_path: str | Path = MODELS_PATH
     checkpoint_name: str = "best_model.pth"
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
