@@ -28,12 +28,6 @@ class EarlyStopping:
             self.counter = 0
 
 
-def get_scheduler(optimizer):
-    return torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", patience=3, factor=0.1
-    )
-
-
 def train_model(
     model: PretrainedImageClassifier,
     train_loader: DataLoader,
@@ -44,7 +38,14 @@ def train_model(
     model = model.to(model.config.device)
     model.config
     early_stopping = EarlyStopping(patience=5)
-    scheduler = get_scheduler(model.optimizer)
+
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        model.optimizer,
+        max_lr=model.config.learning_rate,
+        epochs=num_epochs,
+        steps_per_epoch=len(train_loader),
+    )
+
     best_val_acc = 0.0
 
     for epoch in range(num_epochs):
@@ -97,7 +98,11 @@ def train_model(
 
         if val_metrics["accuracy"] > best_val_acc:
             best_val_acc = val_metrics["accuracy"]
-            save_file_path = model.config.save_path / model.config.backbone_attr / model.config.checkpoint_name
+            save_file_path = (
+                model.config.save_path
+                / model.config.backbone_attr
+                / model.config.checkpoint_name
+            )
             save_file_path.parent.mkdir(parents=True, exist_ok=True)
             torch.save(
                 {
