@@ -186,15 +186,15 @@ class ImageCache:
             cache_dir = os.path.join(str(Path.home()), ".betamark", "image_cache")
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def get_cache_path(self, url):
         # Create a unique filename based on URL hash, using PNG format
         url_hash = hashlib.md5(url.encode()).hexdigest()
         return self.cache_dir / f"{url_hash}.png"
-    
+
     def get_image(self, url):
         cache_path = self.get_cache_path(url)
-        
+
         # If image is cached, load it from disk
         if cache_path.exists():
             try:
@@ -202,18 +202,19 @@ class ImageCache:
             except Exception as e:
                 print(f"Error loading cached image {cache_path}: {e}")
                 cache_path.unlink(missing_ok=True)
-        
+
         # Download and cache the image
         try:
             res = requests.get(url)
             res.raise_for_status()
             np_img = iio.imread(BytesIO(res.content))
             # Save to cache as PNG
-            iio.imwrite(cache_path, np_img, plugin='pillow')
+            iio.imwrite(cache_path, np_img, plugin="pillow")
             return np_img
         except Exception as e:
             print(f"Error downloading/caching image from {url}: {e}")
             return None
+
 
 def run_eval(user_func) -> dict:
     cache = ImageCache()
@@ -227,7 +228,7 @@ def run_eval(user_func) -> dict:
         if np_img is None:
             failed_downloads += 1
             continue
-            
+
         total_answers += 1
         if user_func(np_img) == 1:
             correct_answers += 1
@@ -238,17 +239,17 @@ def run_eval(user_func) -> dict:
         if np_img is None:
             failed_downloads += 1
             continue
-            
+
         total_answers += 1
         if user_func(np_img) == 0:
             correct_answers += 1
 
     if failed_downloads > 0:
         print(f"Warning: {failed_downloads} images failed to download/load")
-    
+
     acc = correct_answers / total_answers if total_answers > 0 else 0
     return {
         "acc": acc,
         "total_evaluated": total_answers,
-        "failed_downloads": failed_downloads
+        "failed_downloads": failed_downloads,
     }

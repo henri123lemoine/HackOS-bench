@@ -1,4 +1,4 @@
-from src import bicycle
+from src.dataset import bicycle
 
 
 def placeholder(x):
