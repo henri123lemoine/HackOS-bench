@@ -116,11 +116,11 @@ class BicycleDataset(Dataset):
 
         for i in tqdm(range(n_pos), desc="Loading bicycle images"):
             images.append(selected_dataset[i]["image"])
-            labels.append(1)
+            labels.append(0)
 
         for i in tqdm(range(n_pos, n_pos + n_neg), desc="Loading non-bicycle images"):
             images.append(selected_dataset[i]["image"])
-            labels.append(0)
+            labels.append(1)
 
         combined = list(zip(images, labels))
         rng.shuffle(combined)
