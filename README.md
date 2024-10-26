@@ -17,10 +17,12 @@ To run `main.py`:
 uv run main.py
 ```
 
-E.g. for other files:
+E.g. train ViT model:
 ```bash
-uv run -m src.dataset.load_dataset
+uv run -m src.models.ViT
 ```
+
+See [Colab](https://colab.research.google.com/drive/1dtey1NnjcfWFa5qaEXzCrrQWjtci1XuB#scrollTo=dLFpfZT2ZvxO) to run with GPU. (WIP)
 
 ## TODO
 

@@ -3,9 +3,6 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
 from src.models.base import PretrainedImageClassifier
-from src.models.ViT import create_vit_classifier
-from src.dataset.processing import create_dataloaders
-from src.settings import MODELS_PATH
 
 
 class EarlyStopping:
@@ -147,20 +144,3 @@ def validate_model(
         "total_samples": total,
         "loss": val_loss / len(val_loader) if len(val_loader) > 0 else float("inf"),
     }
-
-
-if __name__ == "__main__":
-    model = create_vit_classifier()
-
-    train_loader, val_loader = create_dataloaders(
-        processor=model.processor,
-        batch_size=64,  # Adjust based on your GPU memory
-        max_images=1000,  # Can increase this for more training data
-    )
-
-    trained_model = train_model(
-        model,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        num_epochs=3,
-    )
