@@ -28,18 +28,16 @@ uv run -m src.dataset.load_dataset
 
 - [x] [Coco](https://cocodataset.org) (subset -> [Coco minitrain](https://github.com/giddyyupp/coco-minitrain))
 - [x] Downloading
-- [ ] Processing
-- [ ] Split into train and validation datasets
+- [x] Processing
+- [x] Split into train and validation datasets
 - [ ] Dataset augmentation (Unclear if worthwhile with large enough dataset)
 
 ### Models
 
 - [ ] Test out general-purpose models:
-  - [ ] ViT?
-  - [ ] ?
-- [ ] Finetuning pipeline
+  - [x] ViT
+- [ ] Finetuning
   - [ ] Look into sample-efficient finetuning
-  - [ ] Implement ^^
 - [ ] Random Forest for combining various models(?)
 
 ## Contributors
