@@ -1,5 +1,5 @@
-from betamark import bicycle
-
+# from betamark import bicycle
+from src import bicycle
 
 def placeholder(x):
     """
@@ -16,4 +16,5 @@ def placeholder(x):
 
 
 if __name__ == "__main__":
-    bicycle.run_eval(user_func=placeholder)
+    score = bicycle.run_eval(user_func=placeholder)
+    print(f"{score = }")

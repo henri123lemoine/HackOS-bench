@@ -20,7 +20,7 @@ uv run main.py
 
 ## TODO
 
-- [ ] Cache dataset
+- [x] Cache dataset
 - [ ] Find general vision models
 - [ ] Finetune on bike detection task
 - [ ] Implement Random Forest?
