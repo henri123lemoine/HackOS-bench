@@ -1,12 +1,15 @@
-from datasets import load_dataset, Dataset
-import numpy as np
-from pathlib import Path
-import torch
-from torch.utils.data import Dataset as TorchDataset
 import logging
-from tqdm.auto import tqdm
+from pathlib import Path
 from typing import Tuple, List, Optional
+
+import numpy as np
+import torch
+from datasets import load_dataset, Dataset
+from torch.utils.data import Dataset as TorchDataset
+from tqdm.auto import tqdm
 from PIL import Image
+
+from src.settings import CACHE_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +168,6 @@ def get_balanced_sample_sizes(
 
 
 def get_bicycle_dataset(
-    cache_dir: str = ".cache/bicycle_data",
     neg_ratio: float = 1.0,
     max_images: int = 1000,
     random_seed: Optional[int] = 42,
@@ -186,10 +188,7 @@ def get_bicycle_dataset(
     assert max_images > 0, "max_images must be positive"
     assert neg_ratio > 0, "neg_ratio must be positive"
     assert isinstance(max_images, int), "max_images must be an integer"
-    # Setup cache
-    cache_dir = Path(cache_dir)
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_file = cache_dir / f"bicycle_data_{max_images}_{neg_ratio}.pt"
+    cache_file = CACHE_PATH / "bicycle_data" / f"bicycle_data_{max_images}_{neg_ratio}.pt"
 
     # Try loading from cache
     cached_data = load_or_create_cache(cache_file)
