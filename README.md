@@ -21,9 +21,8 @@ uv run main.py
 
 ### Dataset
 
-- [ ] Find bike-specific datasets
-- [ ] Pipeline for downloading and processing various datasets
-- [ ] Implement dataset caching
+- [ ] [Coco](https://cocodataset.org) (subset -> [Coco minitrain](https://github.com/giddyyupp/coco-minitrain))
+- [ ] Pipeline for downloading and processing
 - [ ] Split into train and validation datasets
 - [ ] Dataset augmentation (Unclear if worthwhile with large enough dataset)
 
